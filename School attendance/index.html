@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Virtual School Attendance System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Virtual School Attendance</h1>
+    <form id="attendance-form">
+      <label for="name">Student Name:</label>
+      <input type="text" id="name" name="name" required>
+
+      <label for="roll">Roll Number:</label>
+      <input type="text" id="roll" name="roll" required>
+
+      <label for="class">Class:</label>
+      <input type="text" id="class" name="class" required>
+
+      <label for="status">Attendance Status:</label>
+      <select id="status" name="status" required>
+        <option value="">--Select--</option>
+        <option value="Present">Present</option>
+        <option value="Absent">Absent</option>
+      </select>
+
+      <div class="buttons">
+        <button type="submit">Submit</button>
+        <button type="reset">Reset</button>
+      </div>
+    </form>
+
+    <div id="attendance-list">
+      <h2>Submitted Attendance</h2>
+      <ul id="list"></ul>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('attendance-form');
+    const list = document.getElementById('list');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = form.name.value;
+      const roll = form.roll.value;
+      const cls = form.class.value;
+      const status = form.status.value;
+
+      const listItem = document.createElement('li');
+      listItem.textContent = `Name: ${name}, Roll: ${roll}, Class: ${cls}, Status: ${status}`;
+      list.appendChild(listItem);
+
+      form.reset();
+    });
+  </script>
+</body>
+</html>
