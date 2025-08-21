@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pro UI Components Card</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg-1:#121426;
+    --bg-2:#181b30;
+    --card-grad-1:#6a6cff;
+    --card-grad-2:#28d7ff;
+    --chip-border: rgba(255,255,255,.35);
+    --glass: rgba(255,255,255,.08);
+    --text: #eaf1ff;
+    --muted: #b8c0e0;
+    --muted-2: #A4AED4;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:"Quicksand",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji";
+    color:var(--text);
+    background:
+      radial-gradient(1200px 700px at 20% -10%, #252742 0%, transparent 60%),
+      radial-gradient(1000px 600px at 100% 0%, #1a1c33 0%, transparent 55%),
+      radial-gradient(800px 500px at -10% 100%, #1b1d34 0%, transparent 55%),
+      linear-gradient(180deg,var(--bg-1),var(--bg-2));
+    display:grid;
+    place-items:center;
+    padding:28px;
+  }
+
+  .wrap{
+    width:min(720px,92vw);
+  }
+
+  /* ---- Card with gradient border + soft glow ---- */
+  .card{
+    position:relative;
+    border-radius:26px;
+    padding:28px;
+    background: linear-gradient(160deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow:
+      0 10px 18px rgba(0,0,0,.35),
+      inset 0 1px 0 rgba(255,255,255,.06);
+    transition: transform .35s ease, box-shadow .35s ease;
+    overflow:hidden;
+  }
+  .card:hover{
+    transform: translateY(-6px);
+    box-shadow:
+      0 18px 30px rgba(0,0,0,.45),
+      inset 0 1px 0 rgba(255,255,255,.08);
+  }
+
+  /* gradient border ring */
+  .card::before{
+    content:"";
+    position:absolute; inset:0;
+    border-radius:26px;
+    padding:2px;
+    background: linear-gradient(135deg,var(--card-grad-1),var(--card-grad-2));
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box, 
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events:none;
+  }
+  /* outer glow */
+  .card::after{
+    content:"";
+    position:absolute; inset:-2px;
+    border-radius:28px;
+    background: radial-gradient(120% 140% at 0% 0%, rgba(106,108,255,.20), transparent 60%),
+                radial-gradient(140% 160% at 100% 100%, rgba(40,215,255,.18), transparent 60%);
+    filter: blur(16px);
+    z-index:-1;
+  }
+
+  /* ---- Media / banner ---- */
+  .media{
+    height:220px;
+    border-radius:20px;
+    background: radial-gradient(120% 180% at 10% 10%, rgba(255,255,255,.06), transparent 40%),
+                linear-gradient(135deg,#161a2b,#0f1222 60%, #0b0f1f);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+    position:relative;
+    margin-bottom:22px;
+  }
+
+  .badge{
+    position:absolute;
+    top:16px; left:16px;
+    background: linear-gradient(135deg,#29e3ff,#6a6eff);
+    color:#05111a;
+    font-weight:700;
+    font-size:14px;
+    padding:8px 14px;
+    border-radius:999px;
+    box-shadow: 0 6px 14px rgba(56,196,255,.45);
+  }
+
+  h1{
+    margin:10px 0 8px;
+    font-size: clamp(24px, 3.8vw, 36px);
+    letter-spacing:.2px;
+  }
+
+  .subtitle{
+    color:var(--muted);
+    font-weight:600;
+    margin-bottom:16px;
+  }
+
+  /* chips row */
+  .chips{ display:flex; gap:16px; flex-wrap:wrap; margin:12px 0 16px; }
+  .chip{
+    padding:10px 16px;
+    border-radius:999px;
+    border:1px solid var(--chip-border);
+    background: rgba(255,255,255,.05);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    font-weight:700;
+  }
+
+  .desc{
+    color:var(--muted-2);
+    line-height:1.8;
+    font-weight:600;
+    margin:12px 0 26px;
+  }
+
+  .bottom{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+  }
+
+  .price{
+    font-weight:700;
+    font-size:24px;
+    background: linear-gradient(135deg,#5f6bff,#29e3ff);
+    -webkit-background-clip:text;
+            background-clip:text;
+    color:transparent;
+  }
+
+  .cta{
+    padding:14px 22px;
+    border-radius:16px;
+    border:none;
+    font-weight:800;
+    font-size:16px;
+    color:white;
+    background: linear-gradient(135deg,#6a6eff,#29e3ff);
+    box-shadow:
+      0 10px 20px rgba(88,110,255,.35),
+      inset 0 1px 0 rgba(255,255,255,.25);
+    cursor:pointer;
+    transition: transform .2s ease, box-shadow .2s ease, opacity .2s ease;
+  }
+  .cta:hover{ transform: translateY(-2px) }
+  .cta:active{ transform: translateY(0) scale(.98); box-shadow: 0 6px 14px rgba(88,110,255,.35); }
+
+  /* spacing inside card on small screens */
+  @media (max-width:480px){
+    .card{ padding:22px }
+    .media{ height:190px }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="media">
+        <span class="badge">NEW</span>
+      </div>
+
+      <h1>Pro UI Components</h1>
+      <div class="subtitle">Glass • Gradient • Simple Motion</div>
+
+      <div class="chips">
+        <span class="chip">Responsive</span>
+        <span class="chip">Pure CSS</span>
+        <span class="chip">Modern</span>
+      </div>
+
+      <p class="desc">
+        Ek clean, elegant card jo premium feel deta hai. Gradient border,
+        glass panel aur hover par soft lift — sab kuch simple CSS ke saath.
+      </p>
+
+      <div class="bottom">
+        <div class="price">₹999</div>
+        <button class="cta">Get Now</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
