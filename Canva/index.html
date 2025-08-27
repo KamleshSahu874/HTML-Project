@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canva Clone - Design Studio</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        .canvas-container {
+            position: relative;
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+        }
+        .design-element {
+            position: absolute;
+            cursor: move;
+            border: 2px solid transparent;
+            user-select: none;
+        }
+        .design-element.selected {
+            border: 2px solid #3b82f6;
+        }
+        .design-element .resize-handle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #3b82f6;
+            border: 1px solid white;
+        }
+        .resize-handle.nw { top: -4px; left: -4px; cursor: nw-resize; }
+        .resize-handle.ne { top: -4px; right: -4px; cursor: ne-resize; }
+        .resize-handle.sw { bottom: -4px; left: -4px; cursor: sw-resize; }
+        .resize-handle.se { bottom: -4px; right: -4px; cursor: se-resize; }
+        .toolbar-item {
+            transition: all 0.2s;
+        }
+        .toolbar-item:hover {
+            background-color: #f3f4f6;
+        }
+        .color-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .template-card {
+            aspect-ratio: 4/3;
+            background: white;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .template-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 px-4 py-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button class="md:hidden p-2 rounded-lg hover:bg-gray-100" onclick="toggleSidebar()">
+                    <i class="fas fa-bars text-gray-600"></i>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-palette text-white text-sm"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-800">DesignStudio</h1>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <i class="fas fa-save mr-2"></i>Save
+                </button>
+                <button class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" onclick="exportDesign()">
+                    <i class="fas fa-download mr-2"></i>Export
+                </button>
+                <button class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors" onclick="shareDesign()">
+                    <i class="fas fa-share mr-2"></i>Share
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-screen">
+        <!-- Left Sidebar -->
+        <div id="leftSidebar" class="sidebar w-80 bg-white shadow-lg border-r border-gray-200 flex flex-col">
+            <!-- Sidebar Tabs -->
+            <div class="flex border-b border-gray-200">
+                <button class="sidebar-tab flex-1 py-3 px-4 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-gray-900 hover:border-gray-300 active" onclick="switchSidebarTab('templates')">
+                    <i class="fas fa-th-large mr-2"></i>Templates
+                </button>
+                <button class="sidebar-tab flex-1 py-3 px-4 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-gray-900 hover:border-gray-300" onclick="switchSidebarTab('elements')">
+                    <i class="fas fa-shapes mr-2"></i>Elements
+                </button>
+                <button class="sidebar-tab flex-1 py-3 px-4 text-sm font-medium text-gray-600 border-b-2 border-transparent hover:text-gray-900 hover:border-gray-300" onclick="switchSidebarTab('uploads')">
+                    <i class="fas fa-upload mr-2"></i>Uploads
+                </button>
+            </div>
+
+            <!-- Templates Tab -->
+            <div id="templatesTab" class="tab-content flex-1 overflow-y-auto p-4">
+                <h3 class="text-lg font-semibold mb-4">Choose a template</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="template-card rounded-lg p-3 bg-gradient-to-br from-blue-400 to-purple-600" onclick="loadTemplate('social-media')">
+                        <div class="text-white text-xs font-medium">Social Media Post</div>
+                        <div class="text-white text-xs opacity-80">1080 × 1080</div>
+                    </div>
+                    <div class="template-card rounded-lg p-3 bg-gradient-to-br from-green-400 to-blue-500" onclick="loadTemplate('presentation')">
+                        <div class="text-white text-xs font-medium">Presentation</div>
+                        <div class="text-white text-xs opacity-80">1920 × 1080</div>
+                    </div>
+                    <div class="template-card rounded-lg p-3 bg-gradient-to-br from-pink-400 to-red-500" onclick="loadTemplate('poster')">
+                        <div class="text-white text-xs font-medium">Poster</div>
+                        <div class="text-white text-xs opacity-80">420 × 594</div>
+                    </div>
+                    <div class="template-card rounded-lg p-3 bg-gradient-to-br from-yellow-400 to-orange-500" onclick="loadTemplate('flyer')">
+                        <div class="text-white text-xs font-medium">Flyer</div>
+                        <div class="text-white text-xs opacity-80">210 × 297</div>
+                    </div>
+                    <div class="template-card rounded-lg p-3 bg-gradient-to-br from-indigo-400 to-purple-600" onclick="loadTemplate('business-card')">
+                        <div class="text-white text-xs font-medium">Business Card</div>
+                        <div class="text-white text-xs opacity-80">85 × 55</div>
+                    </div>
+                    <div class="template-card rounded-lg p-3 bg-gradient-to-br from-teal-400 to-blue-500" onclick="loadTemplate('banner')">
+                        <div class="text-white text-xs font-medium">Web Banner</div>
+                        <div class="text-white text-xs opacity-80">728 × 90</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Elements Tab -->
+            <div id="elementsTab" class="tab-content flex-1 overflow-y-auto p-4 hidden">
+                <h3 class="text-lg font-semibold mb-4">Add elements</h3>
+                
+                <!-- Text Tools -->
+                <div class="mb-6">
+                    <h4 class="font-medium text-gray-700 mb-3">Text</h4>
+                    <div class="space-y-2">
+                        <button class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50" onclick="addTextElement('heading')">
+                            <div class="text-lg font-bold">Add a heading</div>
+                        </button>
+                        <button class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50" onclick="addTextElement('subheading')">
+                            <div class="text-base font-medium">Add a subheading</div>
+                        </button>
+                        <button class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50" onclick="addTextElement('body')">
+                            <div class="text-sm">Add a little bit of body text</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Shapes -->
+                <div class="mb-6">
+                    <h4 class="font-medium text-gray-700 mb-3">Shapes</h4>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200" onclick="addShape('rectangle')">
+                            <div class="w-6 h-4 bg-gray-600 rounded-sm"></div>
+                        </button>
+                        <button class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200" onclick="addShape('circle')">
+                            <div class="w-6 h-6 bg-gray-600 rounded-full"></div>
+                        </button>
+                        <button class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200" onclick="addShape('triangle')">
+                            <div class="w-0 h-0 border-l-3 border-r-3 border-b-6 border-transparent border-b-gray-600"></div>
+                        </button>
+                        <button class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200" onclick="addShape('star')">
+                            <i class="fas fa-star text-gray-600"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lines -->
+                <div class="mb-6">
+                    <h4 class="font-medium text-gray-700 mb-3">Lines</h4>
+                    <div class="space-y-2">
+                        <button class="w-full p-3 rounded-lg border border-gray-200 hover:bg-gray-50 flex items-center" onclick="addLine('straight')">
+                            <div class="w-full h-px bg-gray-600"></div>
+                        </button>
+                        <button class="w-full p-3 rounded-lg border border-gray-200 hover:bg-gray-50 flex items-center" onclick="addLine('dashed')">
+                            <div class="w-full h-px bg-gray-600 opacity-60" style="background-image: repeating-linear-gradient(to right, #6b7280, #6b7280 5px, transparent 5px, transparent 10px);"></div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Icons -->
+                <div class="mb-6">
+                    <h4 class="font-medium text-gray-700 mb-3">Icons</h4>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200" onclick="addIcon('heart')">
+                            <i class="fas fa-heart text-gray-600"></i>
+                        </button>
+                        <button class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200" onclick="addIcon('star')">
+                            <i class="fas fa-star text-gray-600"></i>
+                        </button>
+                        <button class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200" onclick="addIcon('location')">
+                            <i class="fas fa-map-marker-alt text-gray-600"></i>
+                        </button>
+                        <button class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200" onclick="addIcon('phone')">
+                            <i class="fas fa-phone text-gray-600"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Uploads Tab -->
+            <div id="uploadsTab" class="tab-content flex-1 overflow-y-auto p-4 hidden">
+                <h3 class="text-lg font-semibold mb-4">Upload media</h3>
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-600 mb-4">Drag and drop your images here</p>
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" onclick="document.getElementById('fileInput').click()">
+                        Choose files
+                    </button>
+                    <input type="file" id="fileInput" multiple accept="image/*" class="hidden" onchange="handleFileUpload(event)">
+                </div>
+                
+                <div id="uploadedImages" class="mt-6 grid grid-cols-2 gap-3">
+                    <!-- Uploaded images will appear here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Canvas Area -->
+        <div class="flex-1 flex flex-col">
+            <!-- Toolbar -->
+            <div class="bg-white border-b border-gray-200 px-4 py-3">
+                <div class="flex items-center justify-center space-x-2">
+                    <button class="toolbar-item p-2 rounded-lg" onclick="selectTool('select')" title="Select">
+                        <i class="fas fa-mouse-pointer text-gray-600"></i>
+                    </button>
+                    <button class="toolbar-item p-2 rounded-lg" onclick="selectTool('text')" title="Text">
+                        <i class="fas fa-font text-gray-600"></i>
+                    </button>
+                    <button class="toolbar-item p-2 rounded-lg" onclick="selectTool('rectangle')" title="Rectangle">
+                        <i class="fas fa-square text-gray-600"></i>
+                    </button>
+                    <button class="toolbar-item p-2 rounded-lg" onclick="selectTool('circle')" title="Circle">
+                        <i class="fas fa-circle text-gray-600"></i>
+                    </button>
+                    <div class="w-px h-6 bg-gray-300"></div>
+                    <button class="toolbar-item p-2 rounded-lg" onclick="undo()" title="Undo">
+                        <i class="fas fa-undo text-gray-600"></i>
+                    </button>
+                    <button class="toolbar-item p-2 rounded-lg" onclick="redo()" title="Redo">
+                        <i class="fas fa-redo text-gray-600"></i>
+                    </button>
+                    <div class="w-px h-6 bg-gray-300"></div>
+                    <button class="toolbar-item p-2 rounded-lg" onclick="zoomOut()" title="Zoom Out">
+                        <i class="fas fa-search-minus text-gray-600"></i>
+                    </button>
+                    <span class="text-sm text-gray-600 px-2" id="zoomLevel">100%</span>
+                    <button class="toolbar-item p-2 rounded-lg" onclick="zoomIn()" title="Zoom In">
+                        <i class="fas fa-search-plus text-gray-600"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Canvas -->
+            <div class="flex-1 overflow-auto bg-gray-100 p-8">
+                <div class="flex justify-center">
+                    <div id="canvas" class="canvas-container bg-white" style="width: 800px; height: 600px;">
+                        <!-- Design elements will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="w-80 bg-white shadow-lg border-l border-gray-200 flex flex-col">
+            <!-- Properties Panel -->
+            <div class="border-b border-gray-200 p-4">
+                <h3 class="text-lg font-semibold mb-4">Properties</h3>
+                <div id="propertiesPanel">
+                    <p class="text-gray-500 text-sm">Select an element to edit its properties</p>
+                </div>
+            </div>
+
+            <!-- Color Picker -->
+            <div class="border-b border-gray-200 p-4">
+                <h4 class="font-medium text-gray-700 mb-3">Colors</h4>
+                <div class="grid grid-cols-8 gap-2 mb-3">
+                    <div class="color-swatch" style="background-color: #000000" onclick="selectColor('#000000')"></div>
+                    <div class="color-swatch" style="background-color: #ffffff" onclick="selectColor('#ffffff')"></div>
+                    <div class="color-swatch" style="background-color: #ff0000" onclick="selectColor('#ff0000')"></div>
+                    <div class="color-swatch" style="background-color: #00ff00" onclick="selectColor('#00ff00')"></div>
+                    <div class="color-swatch" style="background-color: #0000ff" onclick="selectColor('#0000ff')"></div>
+                    <div class="color-swatch" style="background-color: #ffff00" onclick="selectColor('#ffff00')"></div>
+                    <div class="color-swatch" style="background-color: #ff00ff" onclick="selectColor('#ff00ff')"></div>
+                    <div class="color-swatch" style="background-color: #00ffff" onclick="selectColor('#00ffff')"></div>
+                </div>
+                <input type="color" id="customColor" class="w-full h-8 rounded border border-gray-300" onchange="selectColor(this.value)">
+            </div>
+
+            <!-- Layers Panel -->
+            <div class="flex-1 overflow-y-auto p-4">
+                <h4 class="font-medium text-gray-700 mb-3">Layers</h4>
+                <div id="layersPanel" class="space-y-2">
+                    <!-- Layers will be listed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTool = 'select';
+        let selectedElement = null;
+        let isDragging = false;
+        let isResizing = false;
+        let dragOffset = { x: 0, y: 0 };
+        let resizeHandle = null;
+        let zoomLevel = 1;
+        let elements = [];
+        let history = [];
+        let historyIndex = -1;
+        let elementCounter = 0;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            saveState();
+        });
+
+        // Sidebar functionality
+        function toggleSidebar() {
+            const sidebar = document.getElementById('leftSidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        function switchSidebarTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.sidebar-tab').forEach(tab => {
+                tab.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                tab.classList.add('border-transparent', 'text-gray-600');
+            });
+            event.target.closest('.sidebar-tab').classList.add('active', 'border-blue-500', 'text-blue-600');
+
+            // Show/hide tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+        }
+
+        // Tool selection
+        function selectTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.toolbar-item').forEach(item => {
+                item.classList.remove('bg-blue-100');
+            });
+            event.target.closest('.toolbar-item').classList.add('bg-blue-100');
+            
+            const canvas = document.getElementById('canvas');
+            canvas.style.cursor = tool === 'select' ? 'default' : 'crosshair';
+        }
+
+        // Template loading
+        function loadTemplate(type) {
+            const canvas = document.getElementById('canvas');
+            
+            // Clear existing elements
+            elements = [];
+            canvas.innerHTML = '';
+            
+            // Set canvas dimensions based on template
+            switch(type) {
+                case 'social-media':
+                    canvas.style.width = '600px';
+                    canvas.style.height = '600px';
+                    addTextElement('heading', 'Your Heading Here', 50, 50);
+                    break;
+                case 'presentation':
+                    canvas.style.width = '800px';
+                    canvas.style.height = '450px';
+                    addTextElement('heading', 'Presentation Title', 50, 50);
+                    addTextElement('body', 'Your content goes here', 50, 120);
+                    break;
+                case 'poster':
+                    canvas.style.width = '420px';
+                    canvas.style.height = '594px';
+                    addTextElement('heading', 'Event Title', 30, 50);
+                    break;
+                case 'flyer':
+                    canvas.style.width = '400px';
+                    canvas.style.height = '600px';
+                    addTextElement('heading', 'Amazing Offer!', 30, 50);
+                    break;
+                case 'business-card':
+                    canvas.style.width = '350px';
+                    canvas.style.height = '200px';
+                    addTextElement('body', 'Your Name', 20, 20);
+                    addTextElement('body', 'Your Title', 20, 50);
+                    break;
+                case 'banner':
+                    canvas.style.width = '728px';
+                    canvas.style.height = '90px';
+                    addTextElement('body', 'Your Banner Text', 20, 30);
+                    break;
+            }
+            
+            updateLayersPanel();
+            saveState();
+        }
+
+        // Text elements
+        function addTextElement(type, text = null, x = null, y = null) {
+            const canvas = document.getElementById('canvas');
+            const element = document.createElement('div');
+            element.className = 'design-element';
+            element.contentEditable = true;
+            element.style.position = 'absolute';
+            element.style.left = (x || 50) + 'px';
+            element.style.top = (y || 50) + 'px';
+            element.style.minWidth = '100px';
+            element.style.padding = '8px';
+            element.style.outline = 'none';
+            element.style.backgroundColor = 'transparent';
+            element.style.color = '#000000';
+            
+            switch(type) {
+                case 'heading':
+                    element.style.fontSize = '32px';
+                    element.style.fontWeight = 'bold';
+                    element.innerHTML = text || 'Your Heading';
+                    break;
+                case 'subheading':
+                    element.style.fontSize = '24px';
+                    element.style.fontWeight = '600';
+                    element.innerHTML = text || 'Your Subheading';
+                    break;
+                case 'body':
+                    element.style.fontSize = '16px';
+                    element.innerHTML = text || 'Your text here';
+                    break;
+            }
+            
+            element.dataset.type = 'text';
+            element.dataset.id = 'element_' + (++elementCounter);
+            
+            addElementEventListeners(element);
+            canvas.appendChild(element);
+            elements.push(element);
+            
+            selectElement(element);
+            updateLayersPanel();
+            saveState();
+        }
+
+        // Shape elements
+        function addShape(type) {
+            const canvas = document.getElementById('canvas');
+            const element = document.createElement('div');
+            element.className = 'design-element';
+            element.style.position = 'absolute';
+            element.style.left = '100px';
+            element.style.top = '100px';
+            element.style.backgroundColor = '#3b82f6';
+            
+            switch(type) {
+                case 'rectangle':
+                    element.style.width = '100px';
+                    element.style.height = '60px';
+                    break;
+                case 'circle':
+                    element.style.width = '80px';
+                    element.style.height = '80px';
+                    element.style.borderRadius = '50%';
+                    break;
+                case 'triangle':
+                    element.style.width = '0';
+                    element.style.height = '0';
+                    element.style.backgroundColor = 'transparent';
+                    element.style.borderLeft = '40px solid transparent';
+                    element.style.borderRight = '40px solid transparent';
+                    element.style.borderBottom = '60px solid #3b82f6';
+                    break;
+                case 'star':
+                    element.innerHTML = '<i class="fas fa-star" style="font-size: 40px; color: #3b82f6;"></i>';
+                    element.style.width = '40px';
+                    element.style.height = '40px';
+                    element.style.backgroundColor = 'transparent';
+                    break;
+            }
+            
+            element.dataset.type = 'shape';
+            element.dataset.shapeType = type;
+            element.dataset.id = 'element_' + (++elementCounter);
+            
+            addElementEventListeners(element);
+            canvas.appendChild(element);
+            elements.push(element);
+            
+            selectElement(element);
+            updateLayersPanel();
+            saveState();
+        }
+
+        // Add lines
+        function addLine(type) {
+            const canvas = document.getElementById('canvas');
+            const element = document.createElement('div');
+            element.className = 'design-element';
+            element.style.position = 'absolute';
+            element.style.left = '100px';
+            element.style.top = '100px';
+            element.style.width = '200px';
+            element.style.height = '2px';
+            element.style.backgroundColor = '#000000';
+            
+            if (type === 'dashed') {
+                element.style.backgroundImage = 'repeating-linear-gradient(to right, #000000, #000000 5px, transparent 5px, transparent 10px)';
+                element.style.backgroundColor = 'transparent';
+            }
+            
+            element.dataset.type = 'line';
+            element.dataset.lineType = type;
+            element.dataset.id = 'element_' + (++elementCounter);
+            
+            addElementEventListeners(element);
+            canvas.appendChild(element);
+            elements.push(element);
+            
+            selectElement(element);
+            updateLayersPanel();
+            saveState();
+        }
+
+        // Add icons
+        function addIcon(type) {
+            const canvas = document.getElementById('canvas');
+            const element = document.createElement('div');
+            element.className = 'design-element';
+            element.style.position = 'absolute';
+            element.style.left = '100px';
+            element.style.top = '100px';
+            element.style.width = '40px';
+            element.style.height = '40px';
+            element.style.fontSize = '32px';
+            element.style.color = '#3b82f6';
+            element.style.textAlign = 'center';
+            
+            switch(type) {
+                case 'heart':
+                    element.innerHTML = '<i class="fas fa-heart"></i>';
+                    break;
+                case 'star':
+                    element.innerHTML = '<i class="fas fa-star"></i>';
+                    break;
+                case 'location':
+                    element.innerHTML = '<i class="fas fa-map-marker-alt"></i>';
+                    break;
+                case 'phone':
+                    element.innerHTML = '<i class="fas fa-phone"></i>';
+                    break;
+            }
+            
+            element.dataset.type = 'icon';
+            element.dataset.iconType = type;
+            element.dataset.id = 'element_' + (++elementCounter);
+            
+            addElementEventListeners(element);
+            canvas.appendChild(element);
+            elements.push(element);
+            
+            selectElement(element);
+            updateLayersPanel();
+            saveState();
+        }
+
+        // Element interaction
+        function addElementEventListeners(element) {
+            element.addEventListener('mousedown', function(e) {
+                if (e.target.classList.contains('resize-handle')) {
+                    startResize(e, element);
+                } else {
+                    startDrag(e, element);
+                }
+                e.stopPropagation();
+            });
+            
+            element.addEventListener('dblclick', function(e) {
+                if (element.dataset.type === 'text') {
+                    element.focus();
+                }
+            });
+        }
+
+        function selectElement(element) {
+            // Clear previous selection
+            document.querySelectorAll('.design-element').forEach(el => {
+                el.classList.remove('selected');
+                const handles = el.querySelectorAll('.resize-handle');
+                handles.forEach(handle => handle.remove());
+            });
+            
+            if (element) {
+                selectedElement = element;
+                element.classList.add('selected');
+                addResizeHandles(element);
+                updatePropertiesPanel(element);
+            } else {
+                selectedElement = null;
+                updatePropertiesPanel(null);
+            }
+        }
+
+        function addResizeHandles(element) {
+            const handles = ['nw', 'ne', 'sw', 'se'];
+            handles.forEach(handle => {
+                const div = document.createElement('div');
+                div.className = `resize-handle ${handle}`;
+                element.appendChild(div);
+            });
+        }
+
+        function startDrag(e, element) {
+            selectElement(element);
+            isDragging = true;
+            const rect = element.getBoundingClientRect();
+            const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+            
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        function drag(e) {
+            if (!isDragging || !selectedElement) return;
+            
+            const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+            const x = e.clientX - canvasRect.left - dragOffset.x;
+            const y = e.clientY - canvasRect.top - dragOffset.y;
+            
+            selectedElement.style.left = Math.max(0, x) + 'px';
+            selectedElement.style.top = Math.max(0, y) + 'px';
+        }
+
+        function stopDrag() {
+            if (isDragging) {
+                isDragging = false;
+                document.removeEventListener('mousemove', drag);
+                document.removeEventListener('mouseup', stopDrag);
+                saveState();
+            }
+        }
+
+        function startResize(e, element) {
+            isResizing = true;
+            resizeHandle = e.target.classList[1]; // nw, ne, sw, se
+            
+            document.addEventListener('mousemove', resize);
+            document.addEventListener('mouseup', stopResize);
+        }
+
+        function resize(e) {
+            if (!isResizing || !selectedElement) return;
+            
+            const rect = selectedElement.getBoundingClientRect();
+            const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+            
+            let width = parseInt(selectedElement.style.width) || rect.width;
+            let height = parseInt(selectedElement.style.height) || rect.height;
+            let left = parseInt(selectedElement.style.left);
+            let top = parseInt(selectedElement.style.top);
+            
+            switch(resizeHandle) {
+                case 'se':
+                    width = e.clientX - rect.left;
+                    height = e.clientY - rect.top;
+                    break;
+                case 'sw':
+                    width = rect.right - e.clientX;
+                    height = e.clientY - rect.top;
+                    left = e.clientX - canvasRect.left;
+                    break;
+                case 'ne':
+                    width = e.clientX - rect.left;
+                    height = rect.bottom - e.clientY;
+                    top = e.clientY - canvasRect.top;
+                    break;
+                case 'nw':
+                    width = rect.right - e.clientX;
+                    height = rect.bottom - e.clientY;
+                    left = e.clientX - canvasRect.left;
+                    top = e.clientY - canvasRect.top;
+                    break;
+            }
+            
+            if (width > 10 && height > 10) {
+                selectedElement.style.width = width + 'px';
+                selectedElement.style.height = height + 'px';
+                selectedElement.style.left = left + 'px';
+                selectedElement.style.top = top + 'px';
+            }
+        }
+
+        function stopResize() {
+            if (isResizing) {
+                isResizing = false;
+                document.removeEventListener('mousemove', resize);
+                document.removeEventListener('mouseup', stopResize);
+                saveState();
+            }
+        }
+
+        // Canvas click handler
+        document.getElementById('canvas').addEventListener('click', function(e) {
+            if (e.target === this) {
+                selectElement(null);
+            }
+        });
+
+        // Properties panel
+        function updatePropertiesPanel(element) {
+            const panel = document.getElementById('propertiesPanel');
+            
+            if (!element) {
+                panel.innerHTML = '<p class="text-gray-500 text-sm">Select an element to edit its properties</p>';
+                return;
+            }
+            
+            let html = '<div class="space-y-4">';
+            
+            // Position and size
+            html += `
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Position & Size</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs text-gray-500">X</label>
+                            <input type="number" value="${parseInt(element.style.left)}" 
+                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                                   onchange="updateElementStyle('left', this.value + 'px')">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500">Y</label>
+                            <input type="number" value="${parseInt(element.style.top)}" 
+                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                                   onchange="updateElementStyle('top', this.value + 'px')">
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Text properties
+            if (element.dataset.type === 'text') {
+                html += `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Text</label>
+                        <div class="space-y-2">
+                            <div>
+                                <label class="block text-xs text-gray-500">Font Size</label>
+                                <input type="number" value="${parseInt(element.style.fontSize)}" 
+                                       class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                                       onchange="updateElementStyle('fontSize', this.value + 'px')">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500">Font Weight</label>
+                                <select class="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                                        onchange="updateElementStyle('fontWeight', this.value)">
+                                    <option value="normal" ${element.style.fontWeight === 'normal' ? 'selected' : ''}>Normal</option>
+                                    <option value="bold" ${element.style.fontWeight === 'bold' ? 'selected' : ''}>Bold</option>
+                                    <option value="600" ${element.style.fontWeight === '600' ? 'selected' : ''}>Semi Bold</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Color properties
+            html += `
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                    <input type="color" value="${element.style.color || '#000000'}" 
+                           class="w-full h-8 rounded border border-gray-300"
+                           onchange="updateElementStyle('color', this.value)">
+                </div>
+            `;
+            
+            // Background color for shapes
+            if (element.dataset.type === 'shape' || element.dataset.type === 'line') {
+                html += `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Background</label>
+                        <input type="color" value="${element.style.backgroundColor || '#3b82f6'}" 
+                               class="w-full h-8 rounded border border-gray-300"
+                               onchange="updateElementStyle('backgroundColor', this.value)">
+                    </div>
+                `;
+            }
+            
+            // Delete button
+            html += `
+                <button class="w-full px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50"
+                        onclick="deleteElement()">
+                    <i class="fas fa-trash mr-2"></i>Delete Element
+                </button>
+            `;
+            
+            html += '</div>';
+            panel.innerHTML = html;
+        }
+
+        function updateElementStyle(property, value) {
+            if (selectedElement) {
+                selectedElement.style[property] = value;
+                saveState();
+            }
+        }
+
+        function deleteElement() {
+            if (selectedElement) {
+                const index = elements.indexOf(selectedElement);
+                if (index > -1) {
+                    elements.splice(index, 1);
+                }
+                selectedElement.remove();
+                selectedElement = null;
+                updatePropertiesPanel(null);
+                updateLayersPanel();
+                saveState();
+            }
+        }
+
+        // Color selection
+        function selectColor(color) {
+            if (selectedElement) {
+                if (selectedElement.dataset.type === 'text' || selectedElement.dataset.type === 'icon') {
+                    selectedElement.style.color = color;
+                } else {
+                    selectedElement.style.backgroundColor = color;
+                }
+                updatePropertiesPanel(selectedElement);
+                saveState();
+            }
+        }
+
+        // Layers panel
+        function updateLayersPanel() {
+            const panel = document.getElementById('layersPanel');
+            panel.innerHTML = '';
+            
+            elements.slice().reverse().forEach((element, index) => {
+                const layerItem = document.createElement('div');
+                layerItem.className = 'p-2 rounded border border-gray-200 cursor-pointer hover:bg-gray-50';
+                if (element === selectedElement) {
+                    layerItem.classList.add('bg-blue-50', 'border-blue-300');
+                }
+                
+                const type = element.dataset.type;
+                const icon = type === 'text' ? 'fa-font' : 
+                           type === 'shape' ? 'fa-shapes' : 
+                           type === 'icon' ? 'fa-star' : 'fa-minus';
+                
+                layerItem.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas ${icon} text-gray-500"></i>
+                            <span class="text-sm">${type.charAt(0).toUpperCase() + type.slice(1)} ${elements.length - index}</span>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <button class="text-gray-400 hover:text-gray-600" onclick="moveLayerUp(${elements.indexOf(element)})">
+                                <i class="fas fa-chevron-up text-xs"></i>
+                            </button>
+                            <button class="text-gray-400 hover:text-gray-600" onclick="moveLayerDown(${elements.indexOf(element)})">
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                layerItem.addEventListener('click', () => selectElement(element));
+                panel.appendChild(layerItem);
+            });
+        }
+
+        function moveLayerUp(index) {
+            if (index < elements.length - 1) {
+                const element = elements[index];
+                const nextElement = elements[index + 1];
+                
+                // Swap in array
+                elements[index] = nextElement;
+                elements[index + 1] = element;
+                
+                // Swap in DOM
+                const canvas = document.getElementById('canvas');
+                canvas.insertBefore(nextElement, element);
+                
+                updateLayersPanel();
+                saveState();
+            }
+        }
+
+        function moveLayerDown(index) {
+            if (index > 0) {
+                const element = elements[index];
+                const prevElement = elements[index - 1];
+                
+                // Swap in array
+                elements[index] = prevElement;
+                elements[index - 1] = element;
+                
+                // Swap in DOM
+                const canvas = document.getElementById('canvas');
+                canvas.insertBefore(element, prevElement);
+                
+                updateLayersPanel();
+                saveState();
+            }
+        }
+
+        // File upload
+        function handleFileUpload(event) {
+            const files = event.target.files;
+            const uploadedImagesDiv = document.getElementById('uploadedImages');
+            
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'w-full h-24 object-cover rounded cursor-pointer hover:opacity-75';
+                        img.onclick = () => addImageElement(e.target.result);
+                        
+                        const container = document.createElement('div');
+                        container.appendChild(img);
+                        uploadedImagesDiv.appendChild(container);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+
+        function addImageElement(src) {
+            const canvas = document.getElementById('canvas');
+            const element = document.createElement('div');
+            element.className = 'design-element';
+            element.style.position = 'absolute';
+            element.style.left = '100px';
+            element.style.top = '100px';
+            element.style.width = '200px';
+            element.style.height = '150px';
+            element.style.backgroundImage = `url(${src})`;
+            element.style.backgroundSize = 'cover';
+            element.style.backgroundPosition = 'center';
+            
+            element.dataset.type = 'image';
+            element.dataset.id = 'element_' + (++elementCounter);
+            
+            addElementEventListeners(element);
+            canvas.appendChild(element);
+            elements.push(element);
+            
+            selectElement(element);
+            updateLayersPanel();
+            saveState();
+        }
+
+        // Zoom functionality
+        function zoomIn() {
+            zoomLevel = Math.min(zoomLevel + 0.1, 3);
+            applyZoom();
+        }
+
+        function zoomOut() {
+            zoomLevel = Math.max(zoomLevel - 0.1, 0.1);
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const canvas = document.getElementById('canvas');
+            canvas.style.transform = `scale(${zoomLevel})`;
+            document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
+        }
+
+        // History functionality
+        function saveState() {
+            const canvas = document.getElementById('canvas');
+            const state = {
+                html: canvas.innerHTML,
+                elements: elements.map(el => ({
+                    id: el.dataset.id,
+                    type: el.dataset.type,
+                    innerHTML: el.innerHTML,
+                    style: el.style.cssText
+                }))
+            };
+            
+            // Remove future history if we're not at the end
+            history = history.slice(0, historyIndex + 1);
+            history.push(state);
+            historyIndex = history.length - 1;
+            
+            // Limit history size
+            if (history.length > 50) {
+                history.shift();
+                historyIndex--;
+            }
+        }
+
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                restoreState(history[historyIndex]);
+            }
+        }
+
+        function redo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                restoreState(history[historyIndex]);
+            }
+        }
+
+        function restoreState(state) {
+            const canvas = document.getElementById('canvas');
+            canvas.innerHTML = state.html;
+            
+            // Rebuild elements array and reattach event listeners
+            elements = [];
+            canvas.querySelectorAll('.design-element').forEach(element => {
+                addElementEventListeners(element);
+                elements.push(element);
+            });
+            
+            selectedElement = null;
+            updateLayersPanel();
+            updatePropertiesPanel(null);
+        }
+
+        // Export functionality
+        function exportDesign() {
+            // Create a temporary canvas for export
+            const canvas = document.getElementById('canvas');
+            const tempCanvas = document.createElement('canvas');
+            const ctx = tempCanvas.getContext('2d');
+            
+            const canvasRect = canvas.getBoundingClientRect();
+            tempCanvas.width = parseInt(canvas.style.width);
+            tempCanvas.height = parseInt(canvas.style.height);
+            
+            // Fill background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Convert to image and download
+            const link = document.createElement('a');
+            link.download = 'design.png';
+            link.href = tempCanvas.toDataURL();
+            link.click();
+        }
+
+        function shareDesign() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Design',
+                    text: 'Check out this design I created!',
+                    url: window.location.href
+                });
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    alert('Link copied to clipboard!');
+                });
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'z':
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                            redo();
+                        } else {
+                            undo();
+                        }
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        // Save functionality would go here
+                        break;
+                    case 'c':
+                        if (selectedElement) {
+                            e.preventDefault();
+                            // Copy functionality would go here
+                        }
+                        break;
+                    case 'v':
+                        e.preventDefault();
+                        // Paste functionality would go here
+                        break;
+                }
+            }
+            
+            if (e.key === 'Delete' && selectedElement) {
+                deleteElement();
+            }
+        });
+
+        // Initialize first tab as active
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstTab = document.querySelector('.sidebar-tab');
+            if (firstTab) {
+                firstTab.classList.add('active', 'border-blue-500', 'text-blue-600');
+            }
+        });
+    </script>
+</body>
+</html>
